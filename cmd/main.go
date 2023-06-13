@@ -1,29 +1,35 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
+	"os"
 
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
-type Ticket struct {
-	gorm.Model
-	Title       string
-	Description string
-	Status      uint16
+func init() {
+	_, err := godotenv.Load()
+	if err != nil {
+		log.Print("No .env file found")
+	}
 }
 
 func main() {
-	db, err := gorm.Open(mysql.Open("tickets.db"), &gorm.Config{})
-	if err != nil {
-		panic("Connection to database failed")
+	connStr, exists := os.LookupEnv("CONNECTION_STRING")
+	if !exists {
+		log.Print("Connection string not found...")
 	}
 
-	fmt.Println("Connection successful")
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	db.Create(&Ticket{Title: "Email not working", Description: "Help me please", Status: 1})
+	id := 1
+	rows, err := db.Query("SELECT title FROM tickets WHERE id = $1", id)
 
-	var ticket Ticket
-	db.First(&ticket, 1)
+	fmt.Println(rows)
 }
