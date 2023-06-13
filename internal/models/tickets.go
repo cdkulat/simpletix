@@ -28,7 +28,12 @@ func (m *TicketModel) ViewTicket(id int) (*Ticket, error) {
 	t := &Ticket{}
 
 	err := row.Scan(&t.ID, &t.Title, &t.Description, &t.Status, &t.Created, &t.Resolved)
-	if errors.As(err, sql.ErrNoRows) {
+
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNoRecord
+	} else if err != nil {
+		return nil, err
 	}
+
+	return t, nil
 }
