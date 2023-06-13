@@ -1,4 +1,4 @@
-module github.com/cdkulat/simpletix
+module simpletix.kulat.co
 
 go 1.20
 

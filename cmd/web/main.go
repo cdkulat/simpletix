@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"simpletix.kulat.co/internal/models"
 )
 
 func init() {
@@ -16,6 +17,10 @@ func init() {
 	if err != nil {
 		log.Print("No .env file found")
 	}
+}
+
+type application struct {
+	tickets *models.TicketModel
 }
 
 func main() {
