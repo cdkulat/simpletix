@@ -1,0 +1,15 @@
+{{define "title"}}Ticket | ID #{{.Ticket.ID}}{{end}}
+
+{{define "main"}}
+    <div class='ticket'>
+        <div class='metadata'>
+            <strong>{{.Ticket.Title}}</strong>
+            <span>#{{.Snippet.ID}}</span>
+        </div>
+        <pre><code>{{.Ticket.Content}}</code></pre>
+        <div class='metadata'>
+            <time>Created: {{.Ticket.Created}}</time>
+            <time>Expires: {{.Ticket.Expires}}</time>
+        </div>
+    </div>
+{{end}}
