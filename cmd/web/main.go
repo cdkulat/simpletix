@@ -2,10 +2,10 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
+	"flag"
 	"log"
+	"net/http"
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -20,7 +20,9 @@ func init() {
 }
 
 type application struct {
-	tickets *models.TicketModel
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	tickets  *models.TicketModel
 }
 
 func main() {
@@ -29,13 +31,48 @@ func main() {
 		log.Print("Connection string not found...")
 	}
 
-	db, err := sql.Open("postgres", connStr)
+	addr := flag.String("addr", ":8080", "HTTP Network Address")      // Sets custom port when starting program - defaults to 8080
+	dsn := flag.String("dsn", connStr, "postgres db connection pool") // sets a new flag for the database string
+	flag.Parse()                                                      // scan cmd for flags
+
+	infoLog := log.New(os.Stdout, "INFO:\t", log.Ldate|log.Ltime|log.Lshortfile)
+	errorLog := log.New(os.Stderr, "ERROR:\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	db, err := openDB(*dsn)
 	if err != nil {
-		log.Fatal(err)
+		errorLog.Fatal(err)
 	}
 
-	ticket := &Ticket{1, "Help with email", "My email is broken", 1, time.Now(), time.Now()}
-	db.QueryRow("SELECT title FROM tickets WHERE id = $1", &ticket.ID)
+	defer db.Close() // for later, ensures that the database connection is closed before the main function exits
 
-	fmt.Println(ticket.Title)
+	// init instance of application struct
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+		tickets:  &models.TicketModel{DB: db},
+	}
+
+	srv := &http.Server{
+		Addr:     *addr,
+		ErrorLog: errorLog,
+		Handler:  app.routes(),
+	}
+
+	infoLog.Printf("Starting server on %s", *addr)
+	err = srv.ListenAndServe()
+	errorLog.Fatal(err)
+}
+
+func openDB(destination string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", destination)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, err
 }
